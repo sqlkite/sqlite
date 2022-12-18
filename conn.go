@@ -100,6 +100,10 @@ static void sqlkite_user_admin(sqlite3_context *context, int argc, sqlite3_value
 	return sqlkite_user_data(context, "select admin from sqlkite_user");
 }
 
+static char *sqlkite_escape_literal(char *value){
+	return sqlite3_mprintf("%Q", value);
+}
+
 static int registerFunctions(sqlite3 *db) {
 	int rc;
 	rc = sqlite3_create_function(db, "sqlkite_user_id", 0, SQLITE_UTF8, NULL, &sqlkite_user_id, NULL, NULL);
@@ -153,6 +157,13 @@ type Conn struct {
 
 func Memory() (Conn, error) {
 	return Open(":memory:", false)
+}
+
+func EscapeLiteral(value string) string {
+	str := C.sqlkite_escape_literal(C.CString(value))
+	escaped := C.GoString(str)
+	C.sqlite3_free(unsafe.Pointer(str))
+	return escaped
 }
 
 func Open(name string, create bool) (Conn, error) {

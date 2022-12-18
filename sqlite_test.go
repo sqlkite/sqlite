@@ -376,6 +376,13 @@ func Test_Row_Map(t *testing.T) {
 	assert.Nil(t, m["ctimen"])
 }
 
+func Test_Escape(t *testing.T) {
+	assert.Equal(t, sqlite.EscapeLiteral(""), "''")
+	assert.Equal(t, sqlite.EscapeLiteral("over 9000"), "'over 9000'")
+	assert.Equal(t, sqlite.EscapeLiteral(`"over 9000"`), `'"over 9000"'`)
+	assert.Equal(t, sqlite.EscapeLiteral("it's over 9000"), "'it''s over 9000'")
+}
+
 func testDB() sqlite.Conn {
 	db, err := sqlite.Open(":memory:", true)
 	if err != nil {
