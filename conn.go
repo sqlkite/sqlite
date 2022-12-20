@@ -124,6 +124,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"runtime"
 	"time"
 	"unsafe"
 )
@@ -197,14 +198,22 @@ func Open(name string, create bool) (Conn, error) {
 		return Conn{}, err
 	}
 
+	runtime.SetFinalizer(db, closeDB)
 	return Conn{db: db}, nil
 }
 
-func (c *Conn) Close() error {
-	if db := c.db; db != nil {
-		if rc := C.sqlite3_close_v2(db); rc != C.SQLITE_OK {
-			return errorFromCode(db, rc)
-		}
+func (c Conn) Close() error {
+	db := c.db
+	if err := closeDB(db); err != nil {
+		return err
+	}
+	runtime.SetFinalizer(db, nil)
+	return nil
+}
+
+func closeDB(db *C.sqlite3) error {
+	if rc := C.sqlite3_close_v2(db); rc != C.SQLITE_OK {
+		return errorFromCode(db, rc)
 	}
 	return nil
 }
